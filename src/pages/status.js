@@ -62,18 +62,18 @@ const ConfirmedOrderCard = ({ order }) => {
             <p className="text-sm text-gray-300">Status:</p>
             <div className="flex space-x-2 mt-1">
               <div className={`px-3 py-1 rounded ${
-                order.status === 'packed' 
+                order.subStatus === 'packed' 
                   ? 'bg-green-600 text-white' 
                   : 'bg-gray-600 text-gray-300'
               }`}>
-                Packed
+                {order.subStatus === 'packed' ? 'Packed' : 'Unpacked'}
               </div>
               <div className={`px-3 py-1 rounded ${
                 order.status === 'confirmed' 
                   ? 'bg-yellow-600 text-white' 
                   : 'bg-gray-600 text-gray-300'
               }`}>
-                Unpacked
+                {order.status === 'confirmed' ? 'Confirmed' : 'Pending'}
               </div>
             </div>
           </div>
@@ -91,34 +91,61 @@ const StatusPage = () => {
   const searchParams = useSearchParams();
   const [waitlistOrders, setWaitlistOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Fetch waitlist orders
-      const waitlistResponse = await fetch('/api/orders?status=waitlist');
-      const waitlistOrders = await waitlistResponse.json();
-      setWaitlistOrders(waitlistOrders);
+      setIsRefreshing(true);
+      
+      // Clear existing orders while fetching new ones
+      setWaitlistOrders([]);
+      setProcessedOrders([]);
 
-      // Fetch confirmed and packed orders
-      const processedResponse = await fetch('/api/orders');
-      const allOrders = await processedResponse.json();
-      const processedOrders = allOrders.filter(order => 
-        ['confirmed', 'packed'].includes(order.status)
+      // Fetch both waitlist and confirmed orders in parallel
+      const [waitlistResponse, processedResponse] = await Promise.all([
+        fetch('/api/orders?status=waitlist'),
+        fetch('/api/orders?status=confirmed')
+      ]);
+
+      // Check for failed responses
+      if (!waitlistResponse.ok || !processedResponse.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      const [waitlistOrders, processedOrders] = await Promise.all([
+        waitlistResponse.json(),
+        processedResponse.json()
+      ]);
+
+      // Validate and transform orders
+      const validWaitlist = waitlistOrders.filter(order => 
+        order.id && order.timestamp && order.status === 'waitlist'
       );
-      setProcessedOrders(processedOrders);
+      
+      const validProcessed = processedOrders
+        .filter(order => 
+          order.id && order.timestamp && order.status === 'confirmed'
+        )
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      // Update state with validated orders
+      setWaitlistOrders(validWaitlist);
+      setProcessedOrders(validProcessed);
+      
     } catch (error) {
       console.error('Error fetching orders:', error);
+      // Show error state
+      setWaitlistOrders([]);
+      setProcessedOrders([]);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchOrders();
-    // Set up an interval to refresh orders every 30 seconds
-    const interval = setInterval(fetchOrders, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleConfirm = async (orderId) => {
@@ -130,15 +157,34 @@ const StatusPage = () => {
         },
         body: JSON.stringify({ 
           id: orderId, 
-          status: 'confirmed'
+          status: 'confirmed',
+          subStatus: 'unpacked'
         }),
       });
 
       if (response.ok) {
         const confirmedOrder = await response.json();
-        // Remove from waitlist and add to processed orders
-        setWaitlistOrders(prev => prev.filter(order => order.id !== orderId));
-        setProcessedOrders(prev => [...prev, confirmedOrder]);
+        
+        // Remove from waitlist
+        setWaitlistOrders(prev => 
+          prev.filter(order => order.id !== orderId)
+        );
+        
+        // Add to processed orders
+        setProcessedOrders(prev => {
+          // Check if the order already exists
+          const existingOrderIndex = prev.findIndex(o => o.id === confirmedOrder.id);
+          
+          if (existingOrderIndex > -1) {
+            // Update existing order
+            const updatedOrders = [...prev];
+            updatedOrders[existingOrderIndex] = confirmedOrder;
+            return updatedOrders;
+          } else {
+            // Add new order
+            return [confirmedOrder, ...prev];
+          }
+        });
       }
     } catch (error) {
       console.error('Error confirming order:', error);
@@ -168,15 +214,60 @@ const StatusPage = () => {
     }
   };
 
+  const handleRefreshOrders = () => {
+    setIsRefreshing(true);
+    fetchOrders();
+  };
+
   return (
     <div className="container mx-auto p-6 bg-gray-900 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-4xl font-bold text-green-400">Order Status Management</h1>
         <button
-          onClick={fetchOrders}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center"
+          onClick={handleRefreshOrders}
+          className={`
+            bg-blue-600 
+            text-white 
+            px-4 
+            py-2 
+            rounded 
+            hover:bg-blue-700 
+            transition-colors 
+            flex 
+            items-center
+            ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+          disabled={isRefreshing}
         >
-          <span className="mr-2">🔄</span> Refresh Orders
+          {isRefreshing ? (
+            <span className="flex items-center">
+              <svg 
+                className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24"
+              >
+                <circle 
+                  className="opacity-25" 
+                  cx="12" 
+                  cy="12" 
+                  r="10" 
+                  stroke="currentColor" 
+                  strokeWidth="4"
+                ></circle>
+                <path 
+                  className="opacity-75" 
+                  fill="currentColor" 
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Refreshing...
+            </span>
+          ) : (
+            <span className="flex items-center">
+              <span className="mr-2">🔄</span> Refresh Orders
+            </span>
+          )}
         </button>
       </div>
       
