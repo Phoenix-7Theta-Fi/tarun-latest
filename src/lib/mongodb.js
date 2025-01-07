@@ -1,4 +1,18 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '../../');
+
+const envPath = path.join(rootDir, '.env.local');
+console.log('Looking for .env.local at:', envPath);
+
+const result = dotenv.config({ path: envPath });
+console.log('Dotenv result:', result);
+console.log('MONGODB_URI:', process.env.MONGODB_URI);
 
 const MONGODB_URI = process.env.MONGODB_URI;
 

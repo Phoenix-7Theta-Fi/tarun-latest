@@ -9,7 +9,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "🌱",
     description: "High nitrogen content for leafy growth",
     price: 45.99,
-    category: "Nitrogen Fertilizers"
+    category: "Nitrogen Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 2,
@@ -17,7 +19,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "💥",
     description: "Boosts root development and flower formation",
     price: 52.50,
-    category: "Phosphorus Fertilizers"
+    category: "Phosphorus Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 3,
@@ -25,7 +29,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "💪",
     description: "Enhances plant strength and disease resistance",
     price: 49.75,
-    category: "Potassium Fertilizers"
+    category: "Potassium Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 4,
@@ -33,7 +39,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "♻️",
     description: "100% natural nutrient-rich compost",
     price: 35.25,
-    category: "Organic Fertilizers"
+    category: "Organic Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 5,
@@ -41,7 +49,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "🔬",
     description: "Comprehensive trace element supplement",
     price: 59.99,
-    category: "Specialty Fertilizers"
+    category: "Specialty Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 6,
@@ -49,7 +59,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "💦",
     description: "Quick-acting liquid nitrogen solution",
     price: 39.50,
-    category: "Liquid Fertilizers"
+    category: "Liquid Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 7,
@@ -57,7 +69,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "⏳",
     description: "Gradual nutrient release for sustained growth",
     price: 54.25,
-    category: "Specialty Fertilizers"
+    category: "Specialty Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 8,
@@ -65,7 +79,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "🌍",
     description: "Improves soil structure and microbial activity",
     price: 47.75,
-    category: "Soil Amendments"
+    category: "Soil Amendments",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 9,
@@ -73,7 +89,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "💧",
     description: "Complete nutrient solution for hydroponic systems",
     price: 62.50,
-    category: "Specialty Fertilizers"
+    category: "Specialty Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   },
   {
     id: 10,
@@ -81,7 +99,9 @@ const FERTILIZER_PRODUCTS = [
     emoji: "🌿",
     description: "Sustainable, environmentally friendly fertilizer",
     price: 41.25,
-    category: "Organic Fertilizers"
+    category: "Organic Fertilizers",
+    currentStock: 100,
+    lowStockThreshold: 20
   }
 ];
 

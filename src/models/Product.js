@@ -25,6 +25,16 @@ const ProductSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true 
+  },
+  // New fields for inventory
+  currentStock: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  lowStockThreshold: {
+    type: Number,
+    default: 10
   }
 });
 

@@ -26,6 +26,9 @@ export default function Navbar() {
               <Link href="/order-management" className="py-4 px-2 text-gray-300 font-semibold hover:text-green-400 transition duration-300">
                 Manage Orders
               </Link>
+              <Link href="/inventory" className="py-4 px-2 text-gray-300 font-semibold hover:text-green-400 transition duration-300">
+                Inventory
+              </Link>
             </div>
           </div>
         </div>

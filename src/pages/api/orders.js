@@ -1,5 +1,6 @@
 import connectMongoDB from '../../lib/mongodb';
 import Order from '../../models/Order';
+import Product from '../../models/Product';
 
 export default async function handler(req, res) {
   try {
@@ -38,6 +39,14 @@ async function createOrder(req, res) {
       subStatus: undefined, // No subStatus for waitlist orders
       timestamp: new Date()
     };
+
+    // First reduce stock levels for each product in the order
+    for (const item of items) {
+      await Product.findOneAndUpdate(
+        { id: item.id },
+        { $inc: { currentStock: -item.quantity } }
+      );
+    }
 
     const newOrder = new Order(orderData);
     await newOrder.validate();
