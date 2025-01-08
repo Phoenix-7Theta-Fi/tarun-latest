@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function OrderCard({ order, onStatusChange }) {
+export default function OrderCard({ order, onStatusChange, isHistorical = false }) {
   const handleStatusUpdate = async (e) => {
     const newStatus = e.target.value;
     await onStatusChange(order.id, newStatus);
@@ -17,7 +17,7 @@ export default function OrderCard({ order, onStatusChange }) {
   };
 
   return (
-    <div className="
+    <div className={`
       bg-gray-800 
       border 
       border-gray-700 
@@ -26,11 +26,8 @@ export default function OrderCard({ order, onStatusChange }) {
       shadow-gray-900/50 
       p-5 
       mb-4 
-      transition-all 
-      duration-300 
-      hover:scale-[1.02]
-      hover:border-gray-600
-    ">
+      ${!isHistorical ? 'transition-all duration-300 hover:scale-[1.02] hover:border-gray-600' : ''}
+    `}>
       {/* Header Section */}
       <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-700">
         <div>
@@ -43,26 +40,33 @@ export default function OrderCard({ order, onStatusChange }) {
         </div>
         
         {/* Status Dropdown */}
-<select
-  value={order.subStatus}
-  onChange={handleStatusUpdate}
-  className="
-    bg-gray-700
-    text-gray-200
-    border
-    border-gray-600
-    rounded
-    px-3
-    py-1
-    text-sm
-    focus:ring-2
-    focus:ring-blue-500
-  "
->
+{!isHistorical && (
+  <select
+    value={order.subStatus}
+    onChange={handleStatusUpdate}
+    className="
+      bg-gray-700
+      text-gray-200
+      border
+      border-gray-600
+      rounded
+      px-3
+      py-1
+      text-sm
+      focus:ring-2
+      focus:ring-blue-500
+    "
+  >
   <option value="unpacked">Unpacked</option>
   <option value="packed">Packed</option>
-</select>
+        </select>
+      )}
       </div>
+      {isHistorical && (
+        <div className="mt-4 text-sm text-gray-400">
+          Order Date: {new Date(order.timestamp).toLocaleString()}
+        </div>
+      )}
 
       {/* Order Items */}
       <div className="space-y-2 mb-4">

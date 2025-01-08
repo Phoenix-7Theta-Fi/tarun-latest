@@ -62,6 +62,7 @@ export default function OrderProcessing({ initialProducts }) {
         totalQuantity: cart.reduce((sum, item) => sum + item.quantity, 0),
         totalCost: cart.reduce((total, item) => total + (item.price * item.quantity), 0),
         customerName: customerName,
+        customerEmail: `${customerName.toLowerCase().replace(/\s+/g, '')}@default.com`,
         status: 'waitlist'
       };
 

@@ -1,5 +1,6 @@
 import connectMongoDB from '../../lib/mongodb';
 import Customer from '../../models/Customer';
+import Order from '../../models/Order';
 
 export default async function handler(req, res) {
   await connectMongoDB();
@@ -16,10 +17,34 @@ export default async function handler(req, res) {
 
 async function getCustomers(req, res) {
   try {
-    const customers = await Customer.find({}).sort({ totalSpent: -1 });
-    return res.status(200).json(customers);
+    const { customerId } = req.query;
+    
+    if (customerId) {
+      // Fetch customer details and their orders
+      const customer = await Customer.findById(customerId);
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      // Fetch orders using customer name for better compatibility
+      const orders = await Order.find({ customerName: customer.name })
+        .sort({ timestamp: -1 })
+        .lean(); // Use lean() for better performance
+        
+      return res.status(200).json({
+        ...customer.toObject(),
+        orders: orders.map(order => ({
+          ...order,
+          totalAmount: order.totalCost || 0 // Add totalAmount for frontend compatibility
+        }))
+      });
+    } else {
+      // Fetch all customers
+      const customers = await Customer.find({}).sort({ totalSpent: -1 });
+      return res.status(200).json(customers);
+    }
   } catch (error) {
-    return res.status(500).json({ message: 'Error fetching customers', error });
+    return res.status(500).json({ message: 'Error fetching data', error });
   }
 }
 

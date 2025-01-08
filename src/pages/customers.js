@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { 
   FaUserCircle, 
   FaShoppingCart, 
@@ -10,6 +11,7 @@ import {
 } from 'react-icons/fa';
 
 export default function Customers() {
+  const router = useRouter();
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,8 @@ export default function Customers() {
   });
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [customerOrders, setCustomerOrders] = useState({});
+  const [expandedCustomer, setExpandedCustomer] = useState(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -131,6 +135,34 @@ export default function Customers() {
       totalSpent: 0,
       totalOrders: 0
     });
+  };
+
+  const fetchCustomerOrders = async (customerId) => {
+    try {
+      const response = await fetch(`/api/orders?customerId=${customerId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      const orders = await response.json();
+      setCustomerOrders(prev => ({
+        ...prev,
+        [customerId]: orders
+      }));
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setError(error.message);
+    }
+  };
+
+  const toggleCustomerDetails = (customerId) => {
+    if (expandedCustomer === customerId) {
+      setExpandedCustomer(null);
+    } else {
+      setExpandedCustomer(customerId);
+      if (!customerOrders[customerId]) {
+        fetchCustomerOrders(customerId);
+      }
+    }
   };
 
   return (
@@ -243,20 +275,62 @@ export default function Customers() {
         ) : (
           <ul className="space-y-4">
             {filteredCustomers.map(customer => (
-              <li key={customer.email} className="bg-gray-800 p-4 rounded flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-bold">{customer.name}</h3>
-                  <p>Email: {customer.email}</p>
-                  <p>Phone: {customer.phone}</p>
-                  <p>Total Spent: ${customer.totalSpent.toFixed(2)}</p>
-                  <p>Total Orders: {customer.totalOrders}</p>
+              <li 
+                key={customer.email} 
+                className="bg-gray-800 p-4 rounded cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => router.push(`/customer/${customer.id}`)}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-bold">{customer.name}</h3>
+                    <p>Email: {customer.email}</p>
+                    <p>Phone: {customer.phone}</p>
+                    <p>Total Spent: ${customer.totalSpent.toFixed(2)}</p>
+                    <p>Total Orders: {customer.totalOrders}</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleEditCustomer(customer); }}
+                      className="bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 flex items-center"
+                    >
+                      <FaEdit className="mr-1" /> Edit
+                    </button>
+                    <button
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        router.push(`/customer/${customer._id}`); 
+                      }}
+                      className="bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700 flex items-center"
+                    >
+                      View Profile
+                    </button>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => handleEditCustomer(customer)}
-                  className="bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 flex items-center"
-                >
-                  <FaEdit className="mr-1" /> Edit
-                </button>
+                {expandedCustomer === customer._id && (
+                  <div className="mt-4">
+                    <h4 className="font-semibold mb-2">Order History:</h4>
+                    {customerOrders[customer._id]?.length > 0 ? (
+                      <ul className="space-y-2">
+                        {customerOrders[customer._id].map(order => (
+                          <li key={order.id} className="bg-gray-700 p-2 rounded">
+                            <div className="flex justify-between">
+                              <span>Order #{order.id}</span>
+                              <span>${order.totalCost.toFixed(2)}</span>
+                            </div>
+                            <div className="text-sm text-gray-300">
+                              {order.items.map(item => `${item.name} (${item.quantity})`).join(', ')}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {new Date(order.timestamp).toLocaleString()}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-400">No orders found</p>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

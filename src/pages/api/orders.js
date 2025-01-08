@@ -1,6 +1,8 @@
 import connectMongoDB from '../../lib/mongodb';
 import Order from '../../models/Order';
 import Product from '../../models/Product';
+import Customer from '../../models/Customer';
+import mongoose from 'mongoose';
 
 export default async function handler(req, res) {
   try {
@@ -23,73 +25,124 @@ export default async function handler(req, res) {
 }
 
 async function createOrder(req, res) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { id, items, totalQuantity, totalCost, customerName } = req.body;
+    const { id, items, totalQuantity, totalCost, customerName, customerEmail } = req.body;
 
     if (!id || !items || !totalQuantity || !totalCost || !customerName) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         message: 'Missing required fields',
         error: 'All fields are required'
       });
     }
 
-    const orderData = {
-      ...req.body,
-      status: 'waitlist', // Ensure status is set to waitlist
-      subStatus: undefined, // No subStatus for waitlist orders
-      timestamp: new Date()
-    };
+    // Find or create customer with transaction
+    let customer = await Customer.findOne({ 
+      $or: [
+        { name: customerName },
+        { email: customerEmail }
+      ]
+    }).session(session);
 
-    // First reduce stock levels for each product in the order
+    if (!customer) {
+      customer = new Customer({
+        id: Date.now(),
+        name: customerName,
+        email: customerEmail || `${customerName.toLowerCase().replace(/\s+/g, '')}@default.com`,
+        totalOrders: 1,
+        totalSpent: totalCost,
+        orders: []
+      });
+      await customer.save({ session });
+    } else {
+      // Update existing customer
+      customer.totalOrders += 1;
+      customer.totalSpent += totalCost;
+      await customer.save({ session });
+    }
+
+    // Reduce stock levels for each product
     for (const item of items) {
       await Product.findOneAndUpdate(
         { id: item.id },
-        { $inc: { currentStock: -item.quantity } }
+        { $inc: { currentStock: -item.quantity } },
+        { session }
       );
     }
 
-    const newOrder = new Order(orderData);
-    await newOrder.validate();
-    const savedOrder = await newOrder.save();
-
-    const transformedOrder = {
-      id: savedOrder.id,
-      customerName: savedOrder.customerName,
-      items: savedOrder.items,
-      totalQuantity: savedOrder.totalQuantity,
-      totalCost: savedOrder.totalCost,
-      status: savedOrder.status,
-      timestamp: savedOrder.timestamp
+    // Create order
+    const orderData = {
+      ...req.body,
+      customerId: customer._id,
+      status: 'waitlist',
+      timestamp: new Date()
     };
 
-    return res.status(201).json(transformedOrder);
+    const newOrder = new Order(orderData);
+    await newOrder.save({ session });
+
+    // Add order to customer's orders array using $push
+    await Customer.findByIdAndUpdate(
+      customer._id, 
+      { 
+        $push: { orders: newOrder._id },
+        $set: { lastOrderDate: new Date() }
+      },
+      { session }
+    );
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(201).json({
+      order: {
+        id: newOrder.id,
+        customerName: newOrder.customerName,
+        items: newOrder.items,
+        totalQuantity: newOrder.totalQuantity,
+        totalCost: newOrder.totalCost,
+        status: newOrder.status,
+        timestamp: newOrder.timestamp
+      },
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        totalOrders: customer.totalOrders,
+        totalSpent: customer.totalSpent
+      }
+    });
   } catch (error) {
-    console.error('Error creating order:', error);
+    // Rollback transaction in case of error
+    await session.abortTransaction();
+    session.endSession();
 
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        message: 'Validation error',
-        error: error.message,
-        details: Object.values(error.errors).map(err => err.message)
-      });
-    }
-
-    return res.status(400).json({
+    console.error('Detailed Order Creation Error:', error);
+    return res.status(500).json({
       message: 'Error creating order',
-      error: error.message
+      error: error.toString(),
+      stack: error.stack
     });
   }
 }
 
 async function getOrders(req, res) {
   try {
-    const { status, subStatus } = req.query;
+    const { status, subStatus, customerId } = req.query;
     const query = {};
     if (status) {
       query.status = status;
     }
     if (subStatus) {
       query.subStatus = subStatus;
+    }
+    if (customerId) {
+      query.customerId = customerId;
     }
 
     console.log('Fetching orders with query:', query);

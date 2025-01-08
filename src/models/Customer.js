@@ -29,6 +29,16 @@ const CustomerSchema = new mongoose.Schema({
   registeredAt: {
     type: Date,
     default: Date.now
+  },
+  orders: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order'
+    }],
+    default: []
+  },
+  lastOrderDate: {
+    type: Date
   }
 });
 
