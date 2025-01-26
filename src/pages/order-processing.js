@@ -65,7 +65,6 @@ export default function OrderProcessing({ initialProducts }) {
 
     try {
       const newOrder = {
-        id: Date.now().toString(),
         items: cart.map(item => ({
           id: item.id,
           name: item.name,

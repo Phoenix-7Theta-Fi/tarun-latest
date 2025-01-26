@@ -24,14 +24,29 @@ export default async function handler(req, res) {
   }
 }
 
+// Helper function to get order count for the current day
+async function getTodayOrderCount() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  return await Order.countDocuments({
+    timestamp: {
+      $gte: today,
+      $lt: tomorrow
+    }
+  });
+}
+
 async function createOrder(req, res) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const { id, items, totalQuantity, totalCost, customerName, customerEmail } = req.body;
+    const { items, totalQuantity, totalCost, customerName, customerEmail } = req.body;
 
-    if (!id || !items || !totalQuantity || !totalCost || !customerName) {
+    if (!items || !totalQuantity || !totalCost || !customerName) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({
@@ -74,12 +89,18 @@ async function createOrder(req, res) {
       );
     }
 
+    // Generate order ID in format YYMMDDN
+    const now = new Date();
+    const orderCount = await getTodayOrderCount() + 1;
+    const orderId = `${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${orderCount}`;
+
     // Create order
     const orderData = {
       ...req.body,
+      id: orderId,
       customerId: customer._id,
       status: 'waitlist',
-      timestamp: new Date()
+      timestamp: now
     };
 
     const newOrder = new Order(orderData);
