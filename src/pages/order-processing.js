@@ -21,7 +21,7 @@ export default function OrderProcessing({ initialProducts }) {
   const updateProductQuantity = (productId, quantity) => {
     setQuantities(prev => ({
       ...prev,
-      [productId]: Math.max(1, quantity)
+      [productId]: Math.max(0.5, parseFloat(quantity) || 0.5)
     }));
   };
 
@@ -125,9 +125,10 @@ export default function OrderProcessing({ initialProducts }) {
             <div className="flex items-center justify-center gap-2 mt-2">
               <input
                 type="number"
-                min="1"
+                min="0.5"
+                step="0.5"
                 value={quantities[product.id] || 1}
-                onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value))}
+                onChange={(e) => updateProductQuantity(product.id, e.target.value)}
                 className="w-16 border rounded text-center bg-white text-black p-2"
               />
               <button
@@ -149,10 +150,11 @@ export default function OrderProcessing({ initialProducts }) {
               <div>
                 {item.emoji} {item.name}
                 <input 
-                  type="number" 
-                  min="1"
+                  type="number"
+                  min="0.5"
+                  step="0.5"
                   value={item.quantity}
-                  onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                  onChange={(e) => updateQuantity(item.id, parseFloat(e.target.value) || 0.5)}
                   className="w-16 ml-2 border rounded text-center bg-white text-black"
                 />
               </div>
