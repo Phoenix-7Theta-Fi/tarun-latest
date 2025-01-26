@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function OrderCard({ order, onStatusChange, isHistorical = false }) {
+export default function OrderCard({ order, onStatusChange, isHistorical = false, showDispatchButton = false }) {
   const handleStatusUpdate = async (newStatus) => {
     await onStatusChange(order.id, newStatus);
   };
@@ -41,49 +41,45 @@ export default function OrderCard({ order, onStatusChange, isHistorical = false 
         </div>
         
         {/* Status Buttons */}
-        {!isHistorical && (
+        {!isHistorical && order.status !== 'dispatched' && (
       <div className="flex space-x-2">
-        {order.status !== 'dispatched' && (
-          <>
-            <button
-              onClick={() => handleStatusUpdate('unpacked')}
-              className={`
-                px-3
-                py-1
-                text-sm
-                rounded
-                transition-colors
-                ${order.subStatus === 'unpacked'
-                  ? 'bg-gray-700 text-white border-2 border-blue-500'
-                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-gray-500'}
-              `}
-            >
-              Unpacked
-            </button>
-            <button
-              onClick={() => handleStatusUpdate('packed')}
-              className={`
-                px-3
-                py-1
-                text-sm
-                rounded
-                transition-colors
-                ${order.subStatus === 'packed'
-                  ? 'bg-green-700 text-white border-2 border-green-500'
-                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-gray-500'}
-              `}
-            >
-              Packed
-            </button>
-            {order.subStatus === 'packed' && (
-              <button
-                onClick={() => handleStatusUpdate('dispatched')}
-                className="px-3 py-1 text-sm rounded transition-colors bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Dispatch
-              </button>
-            )}
-          </>
+        <button
+          onClick={() => handleStatusUpdate('unpacked')}
+          className={`
+            px-3
+            py-1
+            text-sm
+            rounded
+            transition-colors
+            ${order.subStatus === 'unpacked'
+              ? 'bg-gray-700 text-white border-2 border-blue-500'
+              : 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-gray-500'}
+          `}
+        >
+          Unpacked
+        </button>
+        <button
+          onClick={() => handleStatusUpdate('packed')}
+          className={`
+            px-3
+            py-1
+            text-sm
+            rounded
+            transition-colors
+            ${order.subStatus === 'packed'
+              ? 'bg-green-700 text-white border-2 border-green-500'
+              : 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-gray-500'}
+          `}
+        >
+          Packed
+        </button>
+        {showDispatchButton && order.subStatus === 'packed' && (
+          <button
+            onClick={() => handleStatusUpdate('dispatched')}
+            className="px-3 py-1 text-sm rounded transition-colors bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Dispatch
+          </button>
         )}
       </div>
         )}

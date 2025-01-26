@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { OrderContext } from '../context/OrderContext';
 import { useSearchParams } from 'next/navigation';
+import OrderCard from '../components/OrderCard';
 
 const WaitlistOrderCard = ({ order, onConfirm, onDelete }) => {
   const formatDate = (timestamp) => {
@@ -49,41 +50,34 @@ const WaitlistOrderCard = ({ order, onConfirm, onDelete }) => {
   );
 };
 
-const ConfirmedOrderCard = ({ order }) => {
-  return (
-    <div className="bg-gray-700 border-l-4 border-green-500 p-4 rounded mb-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="font-bold text-green-300">{order.customerName}</p>
-          <p className="text-sm text-gray-300">
-            Order ID: {order.id}
-          </p>
-          <div className="mt-2">
-            <p className="text-sm text-gray-300">Status:</p>
-            <div className="flex space-x-2 mt-1">
-              <div className={`px-3 py-1 rounded ${
-                order.subStatus === 'packed' 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-gray-600 text-gray-300'
-              }`}>
-                {order.subStatus === 'packed' ? 'Packed' : 'Unpacked'}
-              </div>
-              <div className={`px-3 py-1 rounded ${
-                order.status === 'confirmed' 
-                  ? 'bg-yellow-600 text-white' 
-                  : 'bg-gray-600 text-gray-300'
-              }`}>
-                {order.status === 'confirmed' ? 'Confirmed' : 'Pending'}
-              </div>
-            </div>
-          </div>
-        </div>
-        <span className="text-green-400 font-semibold">
-          ₹{order.totalCost.toFixed(2)}
-        </span>
-      </div>
-    </div>
-  );
+const handleStatusUpdate = async (orderId, newStatus) => {
+  try {
+    const response = await fetch('/api/orders', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: orderId,
+        status: newStatus === 'dispatched' ? 'dispatched' : 'confirmed',
+        subStatus: newStatus !== 'dispatched' ? newStatus : undefined
+      }),
+    });
+
+    if (response.ok) {
+      const updatedOrder = await response.json();
+      setProcessedOrders(prev => {
+        if (newStatus === 'dispatched') {
+          return prev.filter(order => order.id !== orderId);
+        }
+        return prev.map(order =>
+          order.id === orderId ? updatedOrder : order
+        );
+      });
+    }
+  } catch (error) {
+    console.error('Error updating order status:', error);
+  }
 };
 
 const StatusPage = () => {
@@ -309,9 +303,11 @@ const StatusPage = () => {
               </div>
             ) : (
               processedOrders.map((order) => (
-                <ConfirmedOrderCard
+                <OrderCard
                   key={order.id}
                   order={order}
+                  onStatusChange={handleStatusUpdate}
+                  showDispatchButton={true}
                 />
               ))
             )}
