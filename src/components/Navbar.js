@@ -23,6 +23,9 @@ export default function Navbar() {
               <Link href="/status" className="py-4 px-2 text-gray-300 font-semibold hover:text-green-400 transition duration-300">
                 Status
               </Link>
+              <Link href="/history" className="py-4 px-2 text-gray-300 font-semibold hover:text-green-400 transition duration-300">
+                History
+              </Link>
               <Link href="/order-management" className="py-4 px-2 text-gray-300 font-semibold hover:text-green-400 transition duration-300">
                 Manage Orders
               </Link>

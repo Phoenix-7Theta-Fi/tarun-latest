@@ -277,8 +277,7 @@ export default function Customers() {
             {filteredCustomers.map(customer => (
               <li 
                 key={customer.email} 
-                className="bg-gray-800 p-4 rounded cursor-pointer hover:bg-gray-700 transition-colors"
-                onClick={() => router.push(`/customer/${customer.id}`)}
+                className="bg-gray-800 p-4 rounded"
               >
                 <div className="flex justify-between items-center">
                   <div>

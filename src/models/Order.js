@@ -48,6 +48,9 @@ const OrderSchema = new mongoose.Schema({
       return this.status === 'confirmed';
     },
     default: 'unpacked'
+  },
+  dispatchedAt: {
+    type: Date
   }
 });
 

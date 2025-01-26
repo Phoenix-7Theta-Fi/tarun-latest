@@ -53,35 +53,37 @@ export default function CustomerDetailsPage() {
     <div className="min-h-screen bg-gray-900 text-gray-100 p-6">
       <div className="container mx-auto">
         {/* Customer Profile Header */}
-        <div className="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg">
-          <div className="flex items-center space-x-6">
-            <div className="bg-gray-700 w-24 h-24 rounded-full flex items-center justify-center text-4xl">
-              {customer.name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-green-400">{customer.name}</h1>
-              <p className="text-gray-400">{customer.email}</p>
-              <div className="mt-2 flex space-x-4">
-                <div>
+        {customer && (
+          <div className="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg">
+            <div className="flex items-center space-x-6">
+              <div className="bg-gray-700 w-24 h-24 rounded-full flex items-center justify-center text-4xl">
+                {customer.name?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-green-400">{customer.name || 'Unknown'}</h1>
+                <p className="text-gray-400">{customer.email || 'No email'}</p>
+                <div className="mt-2 flex space-x-4">
+                  <div>
                   <span className="font-semibold text-gray-200">Total Orders</span>
-                  <p className="text-green-300">{orders.length}</p>
+                  <p className="text-green-300">{orders?.length || 0}</p>
                 </div>
                 <div>
                   <span className="font-semibold text-gray-200">Total Spent</span>
-                  <p className="text-green-300">₹{orders.reduce((total, order) => total + order.totalAmount, 0).toFixed(2)}</p>
+                  <p className="text-green-300">₹{orders?.reduce((total, order) => total + (order.totalAmount || 0), 0).toFixed(2) || '0.00'}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Order History Section */}
         <div>
           <h2 className="text-2xl font-bold mb-6 text-green-400">
-            Order History ({orders.length})
+            Order History ({orders?.length || 0})
           </h2>
           
-          {orders.length === 0 ? (
+          {!orders?.length ? (
             <div className="bg-gray-800 p-6 rounded-xl text-center text-gray-400">
               No orders found for this customer
             </div>

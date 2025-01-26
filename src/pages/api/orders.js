@@ -154,7 +154,7 @@ async function createOrder(req, res) {
 
 async function getOrders(req, res) {
   try {
-    const { status, subStatus, customerId } = req.query;
+    const { status, subStatus, customerId, dispatchedDate } = req.query;
     const query = {};
     if (status) {
       query.status = status;
@@ -164,6 +164,18 @@ async function getOrders(req, res) {
     }
     if (customerId) {
       query.customerId = customerId;
+    }
+    if (dispatchedDate) {
+      const startDate = new Date(dispatchedDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dispatchedDate);
+      endDate.setHours(23, 59, 59, 999);
+      
+      query.status = 'dispatched';
+      query.dispatchedAt = {
+        $gte: startDate,
+        $lte: endDate
+      };
     }
 
     console.log('Fetching orders with query:', query);
@@ -185,7 +197,8 @@ async function getOrders(req, res) {
       totalCost: order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
       status: order.status,
       subStatus: order.subStatus,
-      timestamp: order.timestamp
+      timestamp: order.timestamp,
+      dispatchedAt: order.dispatchedAt
     }));
 
     console.log('Returning transformed orders:', transformedOrders);
@@ -231,8 +244,10 @@ async function updateOrderStatus(req, res) {
             error: 'Order must be packed before dispatching'
           });
         }
+        const dispatchTime = new Date();
         updateData.status = 'dispatched';
         updateData.subStatus = undefined;
+        updateData.dispatchedAt = dispatchTime;
         
         // Update customer's history when dispatching
         await Customer.findByIdAndUpdate(
@@ -242,7 +257,7 @@ async function updateOrderStatus(req, res) {
               [`orderHistory.${existingOrder.id}`]: {
                 ...existingOrder.toObject(),
                 status: 'dispatched',
-                dispatchedAt: new Date()
+                dispatchedAt: dispatchTime
               }
             }
           },
@@ -294,7 +309,8 @@ async function updateOrderStatus(req, res) {
       totalCost: updatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
       status: updatedOrder.status,
       subStatus: updatedOrder.subStatus,
-      timestamp: updatedOrder.timestamp
+      timestamp: updatedOrder.timestamp,
+      dispatchedAt: updatedOrder.dispatchedAt
     };
 
     return res.status(200).json(transformedOrder);
