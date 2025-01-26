@@ -33,7 +33,7 @@ const OrderSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: {
-      values: ['waitlist', 'confirmed'],
+      values: ['waitlist', 'confirmed', 'dispatched'],
       message: '{VALUE} is not a valid status'
     },
     default: 'waitlist'

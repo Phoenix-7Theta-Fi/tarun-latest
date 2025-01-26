@@ -201,37 +201,66 @@ async function getOrders(req, res) {
 }
 
 async function updateOrderStatus(req, res) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { id, status, subStatus } = req.body;
 
     console.log('Updating order status:', { id, status, subStatus });
 
+    // Find the order first to validate and get customer info
+    const existingOrder = await Order.findOne({ id }).session(session);
+    if (!existingOrder) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
     // Prepare update object
     const updateData = {};
 
-    // If status is provided, update status
+    // Handle status update
     if (status) {
-      if (status === 'dispatched' && !['packed'].includes(subStatus)) {
-        return res.status(400).json({
-          message: 'Invalid order state',
-          error: 'Order must be packed before dispatching'
-        });
-      }
-      updateData.status = status;
-      // If moving to 'confirmed' and subStatus is not provided, set default
-      if (status === 'confirmed' && !subStatus) {
-        updateData.subStatus = 'unpacked';
-      }
-      // If moving to dispatched, remove subStatus since it's no longer needed
       if (status === 'dispatched') {
+        if (existingOrder.subStatus !== 'packed') {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(400).json({
+            message: 'Invalid order state',
+            error: 'Order must be packed before dispatching'
+          });
+        }
+        updateData.status = 'dispatched';
         updateData.subStatus = undefined;
+        
+        // Update customer's history when dispatching
+        await Customer.findByIdAndUpdate(
+          existingOrder.customerId,
+          {
+            $set: {
+              [`orderHistory.${existingOrder.id}`]: {
+                ...existingOrder.toObject(),
+                status: 'dispatched',
+                dispatchedAt: new Date()
+              }
+            }
+          },
+          { session }
+        );
+      } else {
+        updateData.status = status;
+        if (status === 'confirmed' && !subStatus) {
+          updateData.subStatus = 'unpacked';
+        }
       }
     }
 
-    // If subStatus is provided, update subStatus
+    // Handle subStatus update if not dispatching
     if (subStatus && status !== 'dispatched') {
-      // Validate subStatus
       if (!['packed', 'unpacked'].includes(subStatus)) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).json({
           message: 'Invalid sub-status',
           error: 'Sub-status must be either "packed" or "unpacked"'
@@ -240,20 +269,19 @@ async function updateOrderStatus(req, res) {
       updateData.subStatus = subStatus;
     }
 
-    // Find and update the order
+    // Update the order
     const updatedOrder = await Order.findOneAndUpdate(
       { id },
       updateData,
       {
         new: true,
-        runValidators: true
+        runValidators: true,
+        session
       }
     );
 
-    if (!updatedOrder) {
-      console.log('Order not found for update:', id);
-      return res.status(404).json({ message: 'Order not found' });
-    }
+    await session.commitTransaction();
+    session.endSession();
 
     console.log('Order updated successfully:', updatedOrder);
 
@@ -271,6 +299,9 @@ async function updateOrderStatus(req, res) {
 
     return res.status(200).json(transformedOrder);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    
     console.error('Error updating order status:', error);
     return res.status(400).json({
       message: 'Error updating order status',
