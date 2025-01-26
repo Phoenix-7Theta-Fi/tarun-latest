@@ -21,12 +21,16 @@ export default function OrderProcessing({ initialProducts }) {
   const updateProductQuantity = (productId, quantity) => {
     setQuantities(prev => ({
       ...prev,
-      [productId]: Math.max(0.5, parseFloat(quantity) || 0.5)
+      [productId]: parseFloat(quantity) || 0
     }));
   };
 
   const addToCart = (product) => {
-    const quantity = quantities[product.id] || 1;
+    const quantity = quantities[product.id] || 0;
+    if (quantity <= 0) {
+      alert('Please enter a valid quantity');
+      return;
+    }
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
       setCart(cart.map(item =>
@@ -38,7 +42,7 @@ export default function OrderProcessing({ initialProducts }) {
       setCart([...cart, {...product, quantity}]);
     }
     // Reset quantity after adding to cart
-    setQuantities(prev => ({...prev, [product.id]: 1}));
+    setQuantities(prev => ({...prev, [product.id]: 0}));
   };
 
   const updateQuantity = (productId, newQuantity) => {
@@ -125,9 +129,9 @@ export default function OrderProcessing({ initialProducts }) {
             <div className="flex items-center justify-center gap-2 mt-2">
               <input
                 type="number"
-                min="0.5"
+                min="0"
                 step="0.5"
-                value={quantities[product.id] || 1}
+                value={quantities[product.id] || 0}
                 onChange={(e) => updateProductQuantity(product.id, e.target.value)}
                 className="w-16 border rounded text-center bg-white text-black p-2"
               />
