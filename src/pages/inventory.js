@@ -12,13 +12,28 @@ export default function Inventory() {
 
   const fetchInventory = async () => {
     try {
+      console.log('Fetching inventory from API...');
       const response = await fetch('/api/inventory');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Inventory data received:', data);
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid data format received');
+      }
+      
       setProducts(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching inventory:', error);
       setLoading(false);
+      // Show error in UI
+      setProducts([]);
+      alert('Failed to load inventory. Please check the console for details.');
     }
   };
 

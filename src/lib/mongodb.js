@@ -36,19 +36,24 @@ async function connectMongoDB() {
     const opts = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Add timeout
     };
 
-    console.log('Creating new MongoDB connection');
+    console.log('Creating new MongoDB connection with URI:', MONGODB_URI);
     cached.promise = mongoose.connect(MONGODB_URI, opts);
   }
 
   try {
     cached.conn = await cached.promise;
-    console.log('MongoDB connected successfully');
+    // Test the connection
+    await mongoose.connection.db.admin().ping();
+    console.log('MongoDB connected and tested successfully');
     return cached.conn;
   } catch (e) {
     cached.promise = null;
-    throw e;
+    console.error('MongoDB connection error:', e);
+    console.error('Connection string used:', MONGODB_URI);
+    throw new Error(`MongoDB connection failed: ${e.message}`);
   }
 }
 

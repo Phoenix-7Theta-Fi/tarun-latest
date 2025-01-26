@@ -50,36 +50,6 @@ const WaitlistOrderCard = ({ order, onConfirm, onDelete }) => {
   );
 };
 
-const handleStatusUpdate = async (orderId, newStatus) => {
-  try {
-    const response = await fetch('/api/orders', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        id: orderId,
-        status: newStatus === 'dispatched' ? 'dispatched' : 'confirmed',
-        subStatus: newStatus !== 'dispatched' ? newStatus : undefined
-      }),
-    });
-
-    if (response.ok) {
-      const updatedOrder = await response.json();
-      setProcessedOrders(prev => {
-        if (newStatus === 'dispatched') {
-          return prev.filter(order => order.id !== orderId);
-        }
-        return prev.map(order =>
-          order.id === orderId ? updatedOrder : order
-        );
-      });
-    }
-  } catch (error) {
-    console.error('Error updating order status:', error);
-  }
-};
-
 const StatusPage = () => {
   const { processedOrders, setProcessedOrders } = useContext(OrderContext);
   const searchParams = useSearchParams();
@@ -205,6 +175,36 @@ const StatusPage = () => {
       }
     } catch (error) {
       console.error('Error deleting order:', error);
+    }
+  };
+
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: orderId,
+          status: newStatus === 'dispatched' ? 'dispatched' : 'confirmed',
+          subStatus: newStatus !== 'dispatched' ? newStatus : undefined
+        }),
+      });
+  
+      if (response.ok) {
+        const updatedOrder = await response.json();
+        setProcessedOrders(prev => {
+          if (newStatus === 'dispatched') {
+            return prev.filter(order => order.id !== orderId);
+          }
+          return prev.map(order =>
+            order.id === orderId ? updatedOrder : order
+          );
+        });
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
     }
   };
 
