@@ -16,19 +16,29 @@ export async function getServerSideProps() {
 export default function OrderProcessing({ initialProducts }) {
   const { customerName, updateCustomerName, addProcessedOrder } = useContext(OrderContext);
   const [cart, setCart] = useState([]);
-  // Removed waitlistOrders state since orders are now managed through the API
+  const [quantities, setQuantities] = useState({});
+
+  const updateProductQuantity = (productId, quantity) => {
+    setQuantities(prev => ({
+      ...prev,
+      [productId]: Math.max(1, quantity)
+    }));
+  };
 
   const addToCart = (product) => {
+    const quantity = quantities[product.id] || 1;
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
-      setCart(cart.map(item => 
-        item.id === product.id 
-          ? {...item, quantity: item.quantity + 1} 
+      setCart(cart.map(item =>
+        item.id === product.id
+          ? {...item, quantity: existingItem.quantity + quantity}
           : item
       ));
     } else {
-      setCart([...cart, {...product, quantity: 1}]);
+      setCart([...cart, {...product, quantity}]);
     }
+    // Reset quantity after adding to cart
+    setQuantities(prev => ({...prev, [product.id]: 1}));
   };
 
   const updateQuantity = (productId, newQuantity) => {
@@ -112,12 +122,21 @@ export default function OrderProcessing({ initialProducts }) {
             <h3 className="font-bold">{product.name}</h3>
             <p className="text-sm text-gray-600 mb-2">{product.description}</p>
             <p className="font-semibold">₹{product.price.toFixed(2)}</p>
-            <button 
-              onClick={() => addToCart(product)}
-              className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
-            >
-              Add to Cart
-            </button>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <input
+                type="number"
+                min="1"
+                value={quantities[product.id] || 1}
+                onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value))}
+                className="w-16 border rounded text-center bg-white text-black p-2"
+              />
+              <button
+                onClick={() => addToCart(product)}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+              >
+                Add to Cart
+              </button>
+            </div>
           </div>
         ))}
       </div>
