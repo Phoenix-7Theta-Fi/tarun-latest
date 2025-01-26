@@ -10,6 +10,8 @@ export default function OrderCard({ order, onStatusChange, isHistorical = false 
     switch (status) {
       case 'packed':
         return 'bg-green-700 text-green-100';
+      case 'dispatched':
+        return 'bg-blue-600 text-blue-100';
       default:
         return 'bg-gray-600 text-gray-100';
     }
@@ -40,7 +42,9 @@ export default function OrderCard({ order, onStatusChange, isHistorical = false 
         
         {/* Status Buttons */}
         {!isHistorical && (
-          <div className="flex space-x-2">
+      <div className="flex space-x-2">
+        {order.status !== 'dispatched' && (
+          <>
             <button
               onClick={() => handleStatusUpdate('unpacked')}
               className={`
@@ -71,7 +75,17 @@ export default function OrderCard({ order, onStatusChange, isHistorical = false 
             >
               Packed
             </button>
-          </div>
+            {order.subStatus === 'packed' && (
+              <button
+                onClick={() => handleStatusUpdate('dispatched')}
+                className="px-3 py-1 text-sm rounded transition-colors bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Dispatch
+              </button>
+            )}
+          </>
+        )}
+      </div>
         )}
       </div>
       {isHistorical && (

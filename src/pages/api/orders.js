@@ -211,15 +211,25 @@ async function updateOrderStatus(req, res) {
 
     // If status is provided, update status
     if (status) {
+      if (status === 'dispatched' && !['packed'].includes(subStatus)) {
+        return res.status(400).json({
+          message: 'Invalid order state',
+          error: 'Order must be packed before dispatching'
+        });
+      }
       updateData.status = status;
       // If moving to 'confirmed' and subStatus is not provided, set default
       if (status === 'confirmed' && !subStatus) {
         updateData.subStatus = 'unpacked';
       }
+      // If moving to dispatched, remove subStatus since it's no longer needed
+      if (status === 'dispatched') {
+        updateData.subStatus = undefined;
+      }
     }
 
     // If subStatus is provided, update subStatus
-    if (subStatus) {
+    if (subStatus && status !== 'dispatched') {
       // Validate subStatus
       if (!['packed', 'unpacked'].includes(subStatus)) {
         return res.status(400).json({
