@@ -1,8 +1,7 @@
 import React from 'react';
 
 export default function OrderCard({ order, onStatusChange, isHistorical = false }) {
-  const handleStatusUpdate = async (e) => {
-    const newStatus = e.target.value;
+  const handleStatusUpdate = async (newStatus) => {
     await onStatusChange(order.id, newStatus);
   };
 
@@ -39,28 +38,41 @@ export default function OrderCard({ order, onStatusChange, isHistorical = false 
           </p>
         </div>
         
-        {/* Status Dropdown */}
-{!isHistorical && (
-  <select
-    value={order.subStatus}
-    onChange={handleStatusUpdate}
-    className="
-      bg-gray-700
-      text-gray-200
-      border
-      border-gray-600
-      rounded
-      px-3
-      py-1
-      text-sm
-      focus:ring-2
-      focus:ring-blue-500
-    "
-  >
-  <option value="unpacked">Unpacked</option>
-  <option value="packed">Packed</option>
-        </select>
-      )}
+        {/* Status Buttons */}
+        {!isHistorical && (
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handleStatusUpdate('unpacked')}
+              className={`
+                px-3
+                py-1
+                text-sm
+                rounded
+                transition-colors
+                ${order.subStatus === 'unpacked'
+                  ? 'bg-gray-700 text-white border-2 border-blue-500'
+                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-gray-500'}
+              `}
+            >
+              Unpacked
+            </button>
+            <button
+              onClick={() => handleStatusUpdate('packed')}
+              className={`
+                px-3
+                py-1
+                text-sm
+                rounded
+                transition-colors
+                ${order.subStatus === 'packed'
+                  ? 'bg-green-700 text-white border-2 border-green-500'
+                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-gray-500'}
+              `}
+            >
+              Packed
+            </button>
+          </div>
+        )}
       </div>
       {isHistorical && (
         <div className="mt-4 text-sm text-gray-400">
